@@ -1,1 +1,1099 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#2f6e4f">
+<title>LKPD Digital — Analisis Penyiraman IoT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#17291f;
+    --ink-soft:#4a5c50;
+    --leaf:#2f6e4f;
+    --leaf-dark:#1f4f39;
+    --sprout:#7fb069;
+    --clay:#a8703f;
+    --clay-soft:#f6ead8;
+    --paper:#fcfbf3;
+    --mist:#e7f0e4;
+    --line:#d5e0d2;
+    --water:#3b8fb0;
+    --shadow:0 18px 40px -22px rgba(23,41,31,.55);
+    --radius:16px;
+  }
 
+  *,*::before,*::after{box-sizing:border-box;}
+
+  html{-webkit-text-size-adjust:100%;}
+
+  body{
+    margin:0;
+    font-family:"DM Sans",system-ui,sans-serif;
+    font-size:16px;
+    line-height:1.6;
+    color:var(--ink);
+    background:
+      radial-gradient(circle at 8% 4%, rgba(127,176,105,.28) 0, rgba(127,176,105,0) 20rem),
+      radial-gradient(circle at 96% 88%, rgba(168,112,63,.18) 0, rgba(168,112,63,0) 18rem),
+      #e9f0e7;
+    padding-bottom:calc(84px + env(safe-area-inset-bottom));
+  }
+
+  h1,h2,h3{font-family:"Fraunces",Georgia,serif;font-weight:700;line-height:1.15;margin:0;}
+  p{margin:0;}
+
+  .wrap{width:100%;max-width:1060px;margin:0 auto;padding:0 14px;}
+
+  /* ---------- Header ---------- */
+  .masthead{
+    background:linear-gradient(160deg,var(--leaf-dark) 0%, var(--leaf) 55%, #3c8259 100%);
+    color:#f2f7ef;
+    padding:26px 0 22px;
+    position:relative;
+    overflow:hidden;
+  }
+  .masthead::after{
+    content:"";
+    position:absolute;inset:auto 0 -1px 0;height:26px;
+    background:radial-gradient(circle at 12px -6px, var(--paper) 13px, transparent 14px) 0 0/28px 26px repeat-x;
+  }
+  .masthead .wrap{position:relative;z-index:2;}
+  .kicker{
+    display:inline-flex;align-items:center;gap:8px;
+    background:rgba(252,251,243,.16);
+    border:1px solid rgba(252,251,243,.3);
+    padding:5px 12px;border-radius:999px;
+    font-size:.8rem;font-weight:700;letter-spacing:.01em;
+  }
+  .masthead h1{font-size:clamp(1.65rem,6vw,2.6rem);margin:12px 0 8px;color:#fff;}
+  .masthead p.lead{max-width:48ch;color:#dcead6;font-size:.96rem;}
+
+  /* tangki air = indikator progres */
+  .tank-row{display:flex;align-items:center;gap:14px;margin-top:20px;}
+  .tank{
+    flex:1;height:34px;border-radius:999px;
+    background:rgba(11,30,22,.35);
+    border:1px solid rgba(252,251,243,.35);
+    overflow:hidden;position:relative;
+  }
+  .tank-fill{
+    height:100%;width:0%;
+    background:linear-gradient(90deg,var(--water),#6fc0b8 70%,var(--sprout));
+    transition:width .45s cubic-bezier(.4,.9,.3,1);
+  }
+  .tank-text{
+    position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    font-size:.82rem;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.45);
+  }
+
+  /* ---------- Identitas ---------- */
+  .id-grid{display:grid;gap:10px;grid-template-columns:1fr 1fr;margin-top:18px;}
+  .id-grid .full{grid-column:1/-1;}
+  .id-grid label{display:block;font-size:.8rem;font-weight:700;color:#d6e6d0;margin-bottom:5px;}
+
+  input[type=text],textarea,select{
+    width:100%;font:inherit;color:var(--ink);
+    background:#fff;
+    border:1.5px solid var(--line);
+    border-radius:12px;
+    padding:11px 13px;
+    outline:none;
+    transition:border-color .18s,box-shadow .18s;
+  }
+  textarea{min-height:92px;resize:vertical;line-height:1.55;}
+  input:focus,textarea:focus,select:focus{border-color:var(--leaf);box-shadow:0 0 0 4px rgba(47,110,79,.16);}
+  ::placeholder{color:#93a294;}
+
+  /* ---------- Navigasi langkah ---------- */
+  .steps{
+    position:sticky;top:0;z-index:40;
+    background:rgba(252,251,243,.93);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  .steps-inner{display:flex;gap:8px;overflow-x:auto;padding:10px 14px;scrollbar-width:none;}
+  .steps-inner::-webkit-scrollbar{display:none;}
+  .step-btn{
+    flex:0 0 auto;display:inline-flex;align-items:center;gap:8px;
+    font:inherit;font-size:.86rem;font-weight:700;
+    color:var(--ink-soft);background:#fff;
+    border:1.5px solid var(--line);border-radius:999px;
+    padding:8px 14px;cursor:pointer;
+    transition:background .18s,color .18s,border-color .18s;
+  }
+  .step-btn .n{
+    width:22px;height:22px;border-radius:50%;
+    display:grid;place-items:center;
+    background:var(--mist);color:var(--leaf-dark);font-size:.75rem;
+  }
+  .step-btn[aria-selected=true]{background:var(--leaf);color:#fff;border-color:var(--leaf);}
+  .step-btn[aria-selected=true] .n{background:rgba(255,255,255,.25);color:#fff;}
+  .step-btn.done .n::after{content:"✓";}
+  .step-btn.done .n{font-size:.8rem;}
+  .step-btn.done .n span{display:none;}
+
+  /* ---------- Panel ---------- */
+  .panel{display:none;padding:22px 0 10px;animation:rise .28s ease-out;}
+  .panel.active{display:block;}
+  @keyframes rise{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+
+  .panel-head{display:flex;gap:12px;align-items:flex-start;margin-bottom:6px;}
+  .panel-head .badge{
+    flex:0 0 auto;width:40px;height:40px;border-radius:13px;
+    background:var(--leaf);color:#fff;display:grid;place-items:center;
+    font-family:"Fraunces",serif;font-size:1.15rem;font-weight:700;
+  }
+  .panel-head h2{font-size:clamp(1.3rem,4.6vw,1.9rem);}
+  .panel-head .sub{color:var(--ink-soft);font-size:.9rem;margin-top:3px;}
+
+  .card{
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:18px 16px;
+    margin-top:16px;
+  }
+  .card > h3{font-size:1.05rem;margin-bottom:4px;}
+  .card .hint{color:var(--ink-soft);font-size:.88rem;}
+
+  .field{margin-top:14px;}
+  .field > label{display:block;font-size:.86rem;font-weight:700;margin-bottom:6px;}
+  .field .sub{font-weight:400;color:var(--ink-soft);}
+
+  .counter{font-size:.76rem;color:var(--ink-soft);margin-top:4px;text-align:right;}
+  .counter.ok{color:var(--leaf);font-weight:700;}
+
+  /* kartu masalah bernomor */
+  .case{border-left:5px solid var(--sprout);}
+  .case-tag{
+    display:inline-flex;align-items:center;gap:8px;
+    background:var(--clay-soft);color:#7a4c22;
+    font-size:.8rem;font-weight:700;border-radius:999px;padding:4px 12px;
+  }
+
+  /* chip pilihan cepat */
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}
+  .chip{
+    font:inherit;font-size:.82rem;font-weight:600;
+    background:#fff;border:1.5px solid var(--line);color:var(--ink-soft);
+    border-radius:999px;padding:7px 13px;cursor:pointer;
+    transition:.15s;
+  }
+  .chip:hover{border-color:var(--sprout);}
+  .chip[aria-pressed=true]{background:var(--mist);border-color:var(--leaf);color:var(--leaf-dark);}
+
+  details.tip{margin-top:12px;border:1px dashed var(--clay);border-radius:12px;background:#fffaf1;}
+  details.tip summary{
+    cursor:pointer;list-style:none;padding:10px 14px;
+    font-weight:700;font-size:.88rem;color:#7a4c22;
+  }
+  details.tip summary::-webkit-details-marker{display:none;}
+  details.tip summary::before{content:"💡 ";}
+  details.tip p{padding:0 14px 12px;font-size:.88rem;color:#5e4830;}
+
+  /* ---------- Simulator ---------- */
+  .sim{background:linear-gradient(170deg,#12291f,#1f4436);color:#e8f2e6;border:none;}
+  .sim h3{color:#fff;}
+  .sim .hint{color:#b8ccb6;}
+  .sim label{color:#cfe2cc;font-size:.85rem;font-weight:700;display:flex;justify-content:space-between;gap:10px;}
+  .sim label b{color:#fff;font-variant-numeric:tabular-nums;}
+  .slider-group{margin-top:16px;}
+  input[type=range]{
+    -webkit-appearance:none;appearance:none;width:100%;height:30px;background:transparent;margin-top:2px;
+  }
+  input[type=range]::-webkit-slider-runnable-track{height:8px;border-radius:999px;background:rgba(255,255,255,.22);}
+  input[type=range]::-moz-range-track{height:8px;border-radius:999px;background:rgba(255,255,255,.22);}
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;width:26px;height:26px;border-radius:50%;
+    background:var(--sprout);border:3px solid #fff;margin-top:-9px;cursor:pointer;
+  }
+  input[type=range]::-moz-range-thumb{
+    width:22px;height:22px;border-radius:50%;background:var(--sprout);border:3px solid #fff;cursor:pointer;
+  }
+  .verdicts{display:grid;gap:10px;margin-top:20px;}
+  .verdict{
+    background:rgba(255,255,255,.08);
+    border:1px solid rgba(255,255,255,.16);
+    border-radius:13px;padding:12px 14px;
+  }
+  .verdict .top{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+  .verdict .name{font-weight:700;color:#fff;font-size:.95rem;}
+  .state{font-size:.76rem;font-weight:700;border-radius:999px;padding:3px 10px;}
+  .state.on{background:#2f6e4f;color:#eaffea;}
+  .state.off{background:rgba(255,255,255,.16);color:#d6e6d0;}
+  .verdict .why{font-size:.83rem;color:#bfd4bd;margin-top:6px;}
+  .bar{height:7px;border-radius:999px;background:rgba(255,255,255,.16);margin-top:9px;overflow:hidden;}
+  .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--water),var(--sprout));transition:width .3s;}
+  .sim-foot{
+    margin-top:16px;font-size:.85rem;color:#cfe2cc;
+    border-top:1px solid rgba(255,255,255,.15);padding-top:12px;
+  }
+
+  /* ---------- Perbandingan strategi ---------- */
+  .compare{display:grid;gap:14px;}
+  .strategy{border-top:6px solid var(--leaf);}
+  .strategy.timer{border-top-color:var(--clay);}
+  .strategy.fuzzy{border-top-color:var(--water);}
+  .strategy h3{display:flex;align-items:center;gap:9px;font-size:1.05rem;}
+  .strategy .desc{font-size:.85rem;color:var(--ink-soft);margin-top:4px;}
+  .aspect{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);}
+  .aspect:first-of-type{border-top:none;}
+  .aspect .name{font-size:.85rem;font-weight:700;}
+
+  .choice{display:grid;gap:10px;margin-top:10px;}
+  .choice label{
+    display:flex;gap:11px;align-items:flex-start;
+    border:1.5px solid var(--line);border-radius:13px;padding:12px 14px;
+    background:#fff;cursor:pointer;transition:.15s;
+  }
+  .choice label:has(input:checked){border-color:var(--leaf);background:var(--mist);box-shadow:0 0 0 3px rgba(47,110,79,.12);}
+  .choice input{margin-top:3px;width:20px;height:20px;accent-color:var(--leaf);flex:0 0 auto;}
+  .choice .t{font-weight:700;font-size:.92rem;}
+  .choice .d{font-size:.83rem;color:var(--ink-soft);}
+
+  /* ---------- Ringkasan ---------- */
+  .summary{background:#fff;}
+  .sum-block{border-top:1px solid var(--line);padding-top:12px;margin-top:12px;}
+  .sum-block:first-child{border-top:none;margin-top:0;padding-top:0;}
+  .sum-q{font-size:.82rem;font-weight:700;color:var(--leaf-dark);}
+  .sum-a{font-size:.92rem;white-space:pre-wrap;margin-top:3px;}
+  .sum-a.empty{color:#a9b3a6;font-style:italic;}
+
+  /* ---------- Tombol & bar bawah ---------- */
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    font:inherit;font-weight:700;font-size:.9rem;
+    border-radius:12px;padding:12px 16px;cursor:pointer;
+    border:1.5px solid transparent;transition:.15s;min-height:46px;
+  }
+  .btn-primary{background:var(--leaf);color:#fff;}
+  .btn-primary:hover{background:var(--leaf-dark);}
+  .btn-ghost{background:#fff;border-color:var(--line);color:var(--ink);}
+  .btn-ghost:hover{border-color:var(--leaf);}
+  .btn-wide{width:100%;}
+  .btn-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;}
+  .btn-row .btn{flex:1 1 150px;}
+
+  .actionbar{
+    position:fixed;left:0;right:0;bottom:0;z-index:50;
+    background:rgba(252,251,243,.96);
+    backdrop-filter:blur(10px);
+    border-top:1px solid var(--line);
+    padding:10px 14px calc(10px + env(safe-area-inset-bottom));
+    display:flex;gap:10px;
+  }
+  .actionbar .btn{flex:1;}
+
+  .toast{
+    position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom));
+    transform:translate(-50%,16px);
+    background:var(--ink);color:#fff;font-size:.88rem;font-weight:600;
+    padding:11px 18px;border-radius:999px;z-index:60;
+    opacity:0;pointer-events:none;transition:.25s;
+    max-width:90vw;text-align:center;
+  }
+  .toast.show{opacity:1;transform:translate(-50%,0);}
+
+  :focus-visible{outline:3px solid var(--clay);outline-offset:2px;}
+
+  .print-only{display:none;}
+
+  /* ---------- Desktop ---------- */
+  @media (min-width:760px){
+    body{padding-bottom:0;}
+    .wrap{padding:0 24px;}
+    .masthead{padding:40px 0 34px;}
+    .compare{grid-template-columns:repeat(3,1fr);align-items:start;}
+    .id-grid{grid-template-columns:repeat(3,1fr);}
+    .id-grid .full{grid-column:auto;}
+    .actionbar{display:none;}
+    .desktop-nav{display:flex;}
+    .panel{padding:30px 0 40px;}
+    .card{padding:22px 22px;}
+  }
+  .desktop-nav{display:none;gap:10px;margin-top:22px;}
+  .desktop-nav .btn{flex:0 0 auto;}
+
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none!important;transition:none!important;}
+  }
+
+  /* ---------- Cetak / simpan PDF ---------- */
+  @media print{
+    @page{margin:14mm;}
+    body{background:#fff;padding:0;font-size:11pt;}
+    .steps,.actionbar,.desktop-nav,.btn-row,.toast,details.tip,.chips,.sim .slider-group,.counter{display:none!important;}
+    .masthead{background:#fff;color:#000;border-bottom:3px solid #2f6e4f;padding:0 0 12px;}
+    .masthead::after{display:none;}
+    .masthead h1,.masthead p.lead,.id-grid label{color:#000;}
+    .kicker{border-color:#999;background:#fff;color:#000;}
+    .tank-row{display:none;}
+    .panel{display:block!important;padding:14px 0 0;break-inside:avoid;}
+    .card{box-shadow:none;break-inside:avoid;page-break-inside:avoid;background:#fff;}
+    .sim{background:#fff;color:#000;border:1px solid #999;}
+    .sim h3,.sim .name,.sim label b{color:#000;}
+    .sim .hint,.sim .why,.sim-foot{color:#333;}
+    .state.on{background:#ddd;color:#000;}
+    textarea,input[type=text]{border:none;border-bottom:1px solid #999;border-radius:0;padding:2px 0;}
+    textarea{min-height:auto;height:auto;}
+    .print-only{display:block;}
+  }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="wrap">
+    <span class="kicker">🌱 LKPD Digital · Informatika</span>
+    <h1>Menyiram tanaman dengan cara yang lebih pintar</h1>
+    <p class="lead">Kamu akan meneliti masalah penyiraman di lahan sekitarmu, mencoba tiga cara kerja alat penyiram otomatis, lalu memilih mana yang paling masuk akal untuk dipakai.</p>
+
+    <div class="tank-row" role="group" aria-label="Kemajuan pengisian">
+      <div class="tank">
+        <div class="tank-fill" id="tankFill"></div>
+        <div class="tank-text" id="tankText">0 dari 0 bagian terisi</div>
+      </div>
+    </div>
+
+    <div class="id-grid">
+      <div>
+        <label for="nama">Nama</label>
+        <input type="text" id="nama" data-track data-label="Nama" autocomplete="name" placeholder="Nama lengkap">
+      </div>
+      <div>
+        <label for="kelas">Kelas</label>
+        <input type="text" id="kelas" data-track data-label="Kelas" placeholder="Contoh: XI RPL 2">
+      </div>
+      <div class="full">
+        <label for="kelompok">Kelompok &amp; lokasi lahan yang disurvei</label>
+        <input type="text" id="kelompok" data-track data-label="Kelompok & lokasi" placeholder="Contoh: Kelompok 3 — kebun sayur belakang sekolah">
+      </div>
+    </div>
+  </div>
+</header>
+
+<nav class="steps" aria-label="Bagian LKPD">
+  <div class="steps-inner wrap" id="stepNav" role="tablist">
+    <button class="step-btn" role="tab" aria-selected="true" data-step="0"><span class="n"><span>1</span></span>Temuan lapangan</button>
+    <button class="step-btn" role="tab" aria-selected="false" data-step="1"><span class="n"><span>2</span></span>Uji coba algoritma</button>
+    <button class="step-btn" role="tab" aria-selected="false" data-step="2"><span class="n"><span>3</span></span>Bandingkan strategi</button>
+    <button class="step-btn" role="tab" aria-selected="false" data-step="3"><span class="n"><span>4</span></span>Keputusan</button>
+    <button class="step-btn" role="tab" aria-selected="false" data-step="4"><span class="n"><span>5</span></span>Hasil kerja</button>
+  </div>
+</nav>
+
+<main class="wrap">
+
+  <!-- ============ LANGKAH 1 ============ -->
+  <section class="panel active" data-panel="0" role="tabpanel" aria-label="Temuan lapangan">
+    <div class="panel-head">
+      <div class="badge">1</div>
+      <div>
+        <h2>Apa yang kamu temukan di lahan?</h2>
+        <p class="sub">Tulis tiga masalah penyiraman yang benar-benar kamu lihat atau kamu tanyakan ke petani/penjaga kebun. Untuk tiap masalah, sebutkan akibatnya dan bantuan apa yang bisa diberikan alat penyiram otomatis.</p>
+      </div>
+    </div>
+
+    <article class="card case">
+      <span class="case-tag">Masalah 1</span>
+      <div class="field">
+        <label for="m1">Masalah yang terjadi</label>
+        <textarea id="m1" data-track data-label="Masalah 1" placeholder="Contoh: penyiraman dilakukan pagi dan sore dengan selang, tanpa melihat kondisi tanah."></textarea>
+        <div class="counter" data-for="m1"></div>
+      </div>
+      <div class="field">
+        <label for="d1">Akibatnya bagi tanaman, air, atau tenaga kerja</label>
+        <textarea id="d1" data-track data-label="Akibat 1" placeholder="Contoh: air terbuang saat tanah masih basah, dan petani kehilangan waktu sekitar 1 jam setiap hari."></textarea>
+        <div class="counter" data-for="d1"></div>
+      </div>
+      <div class="field">
+        <label for="s1">Data apa yang perlu dibaca alat, dan apa yang harus dilakukannya? <span class="sub">(sensor → keputusan → tindakan)</span></label>
+        <textarea id="s1" data-track data-label="Kebutuhan alat 1" placeholder="Contoh: sensor kelembapan tanah membaca kondisi tiap 30 menit, lalu pompa menyala hanya jika tanah kering."></textarea>
+        <div class="counter" data-for="s1"></div>
+      </div>
+      <details class="tip"><summary>Bingung mulai dari mana?</summary>
+        <p>Tanyakan tiga hal ini: siapa yang menyiram, kapan waktunya ditentukan, dan bagaimana cara tahu tanamannya sudah cukup air. Jawaban atas pertanyaan ketiga biasanya langsung menunjukkan masalahnya.</p>
+      </details>
+    </article>
+
+    <article class="card case">
+      <span class="case-tag">Masalah 2</span>
+      <div class="field">
+        <label for="m2">Masalah yang terjadi</label>
+        <textarea id="m2" data-track data-label="Masalah 2"></textarea>
+        <div class="counter" data-for="m2"></div>
+      </div>
+      <div class="field">
+        <label for="d2">Akibatnya bagi tanaman, air, atau tenaga kerja</label>
+        <textarea id="d2" data-track data-label="Akibat 2"></textarea>
+        <div class="counter" data-for="d2"></div>
+      </div>
+      <div class="field">
+        <label for="s2">Data apa yang perlu dibaca alat, dan apa yang harus dilakukannya?</label>
+        <textarea id="s2" data-track data-label="Kebutuhan alat 2"></textarea>
+        <div class="counter" data-for="s2"></div>
+      </div>
+    </article>
+
+    <article class="card case">
+      <span class="case-tag">Masalah 3</span>
+      <div class="field">
+        <label for="m3">Masalah yang terjadi</label>
+        <textarea id="m3" data-track data-label="Masalah 3"></textarea>
+        <div class="counter" data-for="m3"></div>
+      </div>
+      <div class="field">
+        <label for="d3">Akibatnya bagi tanaman, air, atau tenaga kerja</label>
+        <textarea id="d3" data-track data-label="Akibat 3"></textarea>
+        <div class="counter" data-for="d3"></div>
+      </div>
+      <div class="field">
+        <label for="s3">Data apa yang perlu dibaca alat, dan apa yang harus dilakukannya?</label>
+        <textarea id="s3" data-track data-label="Kebutuhan alat 3"></textarea>
+        <div class="counter" data-for="s3"></div>
+      </div>
+    </article>
+
+    <article class="card">
+      <h3>Dua pertanyaan penutup</h3>
+      <div class="field">
+        <label for="q1">Dari ketiga masalah di atas, mana yang paling mendesak diselesaikan lebih dulu? Jelaskan dasar pilihanmu.</label>
+        <textarea id="q1" data-track data-label="Masalah paling mendesak" style="min-height:118px"></textarea>
+        <div class="counter" data-for="q1"></div>
+      </div>
+      <div class="field">
+        <label for="q2">Kalau penyiraman diserahkan ke mesin, keputusan apa yang tetap harus dipegang manusia? Beri satu contoh.</label>
+        <textarea id="q2" data-track data-label="Peran manusia" style="min-height:118px"></textarea>
+        <div class="counter" data-for="q2"></div>
+      </div>
+      <details class="tip"><summary>Arahan untuk pertanyaan kedua</summary>
+        <p>Pikirkan situasi yang tidak terbaca sensor: pipa bocor, tanaman baru dipindah, atau musim panen. Siapa yang menyadarinya, dan lewat apa orang itu bisa mengambil alih?</p>
+      </details>
+    </article>
+
+    <div class="desktop-nav">
+      <button class="btn btn-primary" data-go="1">Lanjut ke uji coba algoritma</button>
+    </div>
+  </section>
+
+  <!-- ============ LANGKAH 2 : SIMULATOR ============ -->
+  <section class="panel" data-panel="1" role="tabpanel" aria-label="Uji coba algoritma">
+    <div class="panel-head">
+      <div class="badge">2</div>
+      <div>
+        <h2>Coba dulu, baru simpulkan</h2>
+        <p class="sub">Geser keempat kondisi lahan di bawah ini. Ketiga cara kerja alat akan mengambil keputusannya masing-masing. Cari kondisi yang membuat ketiganya berbeda jawaban.</p>
+      </div>
+    </div>
+
+    <article class="card sim">
+      <h3>Simulasi penyiraman</h3>
+      <p class="hint">Anggap pompa mengalirkan 2,5 liter air per menit.</p>
+
+      <div class="slider-group">
+        <label for="soil">Kelembapan tanah <b><span id="soilVal">35</span>%</b></label>
+        <input type="range" id="soil" min="0" max="100" value="35">
+      </div>
+      <div class="slider-group">
+        <label for="temp">Suhu udara <b><span id="tempVal">32</span>°C</b></label>
+        <input type="range" id="temp" min="18" max="42" value="32">
+      </div>
+      <div class="slider-group">
+        <label for="rain">Peluang hujan 3 jam ke depan <b><span id="rainVal">20</span>%</b></label>
+        <input type="range" id="rain" min="0" max="100" value="20">
+      </div>
+      <div class="slider-group">
+        <label for="hours">Waktu sejak penyiraman terakhir <b><span id="hoursVal">14</span> jam</b></label>
+        <input type="range" id="hours" min="0" max="24" value="14">
+      </div>
+
+      <div class="verdicts">
+        <div class="verdict">
+          <div class="top"><span class="name">Ambang batas (threshold)</span><span class="state off" id="stThr">—</span></div>
+          <div class="bar"><i id="barThr"></i></div>
+          <p class="why" id="whyThr"></p>
+        </div>
+        <div class="verdict">
+          <div class="top"><span class="name">Jadwal waktu (timer)</span><span class="state off" id="stTim">—</span></div>
+          <div class="bar"><i id="barTim"></i></div>
+          <p class="why" id="whyTim"></p>
+        </div>
+        <div class="verdict">
+          <div class="top"><span class="name">Logika samar (fuzzy)</span><span class="state off" id="stFuz">—</span></div>
+          <div class="bar"><i id="barFuz"></i></div>
+          <p class="why" id="whyFuz"></p>
+        </div>
+      </div>
+
+      <p class="sim-foot" id="simFoot"></p>
+    </article>
+
+    <article class="card">
+      <h3>Catat hasil percobaanmu</h3>
+      <p class="hint">Isi setelah kamu mencoba minimal tiga kombinasi kondisi yang berbeda.</p>
+      <div class="field">
+        <label for="sim1">Pada kondisi seperti apa ketiga cara kerja itu memberi keputusan berbeda? Tulis angka yang kamu pakai.</label>
+        <textarea id="sim1" data-track data-label="Kondisi pembeda" placeholder="Contoh: kelembapan 30%, peluang hujan 90% — threshold dan timer tetap menyiram, fuzzy berhenti."></textarea>
+        <div class="counter" data-for="sim1"></div>
+      </div>
+      <div class="field">
+        <label for="sim2">Cara kerja mana yang paling boros air pada percobaanmu, dan apa penyebabnya?</label>
+        <textarea id="sim2" data-track data-label="Paling boros air"></textarea>
+        <div class="counter" data-for="sim2"></div>
+      </div>
+    </article>
+
+    <div class="desktop-nav">
+      <button class="btn btn-ghost" data-go="0">Kembali</button>
+      <button class="btn btn-primary" data-go="2">Lanjut ke perbandingan</button>
+    </div>
+  </section>
+
+  <!-- ============ LANGKAH 3 : PERBANDINGAN ============ -->
+  <section class="panel" data-panel="2" role="tabpanel" aria-label="Perbandingan strategi">
+    <div class="panel-head">
+      <div class="badge">3</div>
+      <div>
+        <h2>Bandingkan ketiganya</h2>
+        <p class="sub">Beri penilaianmu untuk setiap aspek, lalu tulis alasannya dalam satu kalimat. Tombol penilaian membantumu memberi nilai cepat lewat HP.</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <article class="card strategy">
+        <h3>🌡️ Ambang batas</h3>
+        <p class="desc">Pompa menyala saat kelembapan tanah turun di bawah angka tertentu, misalnya 40%.</p>
+
+        <div class="aspect">
+          <p class="name">Kesulitan membuatnya</p>
+          <div class="chips" data-chip-for="thr-k">
+            <button type="button" class="chip">Mudah</button>
+            <button type="button" class="chip">Sedang</button>
+            <button type="button" class="chip">Sulit</button>
+          </div>
+          <textarea id="thr-k" data-track data-label="Ambang batas — kesulitan membuat" style="min-height:70px" placeholder="Alasan singkat"></textarea>
+        </div>
+
+        <div class="aspect">
+          <p class="name">Hemat air</p>
+          <div class="chips" data-chip-for="thr-a">
+            <button type="button" class="chip">Boros</button>
+            <button type="button" class="chip">Cukup hemat</button>
+            <button type="button" class="chip">Sangat hemat</button>
+          </div>
+          <textarea id="thr-a" data-track data-label="Ambang batas — hemat air" style="min-height:70px" placeholder="Alasan singkat"></textarea>
+        </div>
+
+        <div class="aspect">
+          <p class="name">Tanggap terhadap cuaca</p>
+          <div class="chips" data-chip-for="thr-c">
+            <button type="button" class="chip">Tidak tanggap</button>
+            <button type="button" class="chip">Sebagian</button>
+            <button type="button" class="chip">Tanggap</button>
+          </div>
+          <textarea id="thr-c" data-track data-label="Ambang batas — tanggap cuaca" style="min-height:70px" placeholder="Alasan singkat"></textarea>
+        </div>
+
+        <div class="aspect">
+          <p class="name">Cocok untuk lahan yang kamu survei</p>
+          <div class="chips" data-chip-for="thr-s">
+            <button type="button" class="chip">Kurang cocok</button>
+            <button type="button" class="chip">Cukup cocok</button>
+            <button type="button" class="chip">Sangat cocok</button>
+          </div>
+          <textarea id="thr-s" data-track data-label="Ambang batas — kecocokan" style="min-height:70px" placeholder="Alasan singkat"></textarea>
+        </div>
+      </article>
+
+      <article class="card strategy timer">
+        <h3>⏰ Jadwal waktu</h3>
+        <p class="desc">Pompa menyala pada jam tetap atau setiap sekian jam sekali, tanpa membaca kondisi tanah.</p>
+
+        <div class="aspect">
+          <p class="name">Kesulitan membuatnya</p>
+          <div class="chips" data-chip-for="tim-k">
+            <button type="button" class="chip">Mudah</button>
+            <button type="button" class="chip">Sedang</button>
+            <button type="button" class="chip">Sulit</button>
+          </div>
+          <textarea id="tim-k" data-track data-label="Jadwal waktu — kesulitan membuat" style="min-height:70px" placeholder="Alasan singkat"></textarea>
+        </div>
+
+        <div class="aspect">
+          <p class="name">Hemat air</p>
+          <div class="chips" data-chip-for="tim-a">
+            <button type="button" class="chip">Boros</button>
+            <button type="button" class="chip">Cukup hemat</button>
+            <button type="button" class="chip">Sangat hemat</button>
+          </div>
+          <textarea id="tim-a" data-track data-label="Jadwal waktu — hemat air" style="min-height:70px" placeholder="Alasan singkat"></textarea>
+        </div>
+
+        <div class="aspect">
+          <p class="name">Tanggap terhadap cuaca</p>
+          <div class="chips" data-chip-for="tim-c">
+            <button type="button" class="chip">Tidak tanggap</button>
+            <button type="button" class="chip">Sebagian</button>
+            <button type="button" class="chip">Tanggap</button>
+          </div>
+          <textarea id="tim-c" data-track data-label="Jadwal waktu — tanggap cuaca" style="min-height:70px" placeholder="Alasan singkat"></textarea>
+        </div>
+
+        <div class="aspect">
+          <p class="name">Cocok untuk lahan yang kamu survei</p>
+          <div class="chips" data-chip-for="tim-s">
+            <button type="button" class="chip">Kurang cocok</button>
+            <button type="button" class="chip">Cukup cocok</button>
+            <button type="button" class="chip">Sangat cocok</button>
+          </div>
+          <textarea id="tim-s" data-track data-label="Jadwal waktu — kecocokan" style="min-height:70px" placeholder="Alasan singkat"></textarea>
+        </div>
+      </article>
+
+      <article class="card strategy fuzzy">
+        <h3>🧠 Logika samar</h3>
+        <p class="desc">Alat menimbang beberapa data sekaligus — tanah, suhu, peluang hujan — lalu menentukan lama penyiraman.</p>
+
+        <div class="aspect">
+          <p class="name">Kesulitan membuatnya</p>
+          <div class="chips" data-chip-for="fuz-k">
+            <button type="button" class="chip">Mudah</button>
+            <button type="button" class="chip">Sedang</button>
+            <button type="button" class="chip">Sulit</button>
+          </div>
+          <textarea id="fuz-k" data-track data-label="Logika samar — kesulitan membuat" style="min-height:70px" placeholder="Alasan singkat"></textarea>
+        </div>
+
+        <div class="aspect">
+          <p class="name">Hemat air</p>
+          <div class="chips" data-chip-for="fuz-a">
+            <button type="button" class="chip">Boros</button>
+            <button type="button" class="chip">Cukup hemat</button>
+            <button type="button" class="chip">Sangat hemat</button>
+          </div>
+          <textarea id="fuz-a" data-track data-label="Logika samar — hemat air" style="min-height:70px" placeholder="Alasan singkat"></textarea>
+        </div>
+
+        <div class="aspect">
+          <p class="name">Tanggap terhadap cuaca</p>
+          <div class="chips" data-chip-for="fuz-c">
+            <button type="button" class="chip">Tidak tanggap</button>
+            <button type="button" class="chip">Sebagian</button>
+            <button type="button" class="chip">Tanggap</button>
+          </div>
+          <textarea id="fuz-c" data-track data-label="Logika samar — tanggap cuaca" style="min-height:70px" placeholder="Alasan singkat"></textarea>
+        </div>
+
+        <div class="aspect">
+          <p class="name">Cocok untuk lahan yang kamu survei</p>
+          <div class="chips" data-chip-for="fuz-s">
+            <button type="button" class="chip">Kurang cocok</button>
+            <button type="button" class="chip">Cukup cocok</button>
+            <button type="button" class="chip">Sangat cocok</button>
+          </div>
+          <textarea id="fuz-s" data-track data-label="Logika samar — kecocokan" style="min-height:70px" placeholder="Alasan singkat"></textarea>
+        </div>
+      </article>
+    </div>
+
+    <div class="desktop-nav">
+      <button class="btn btn-ghost" data-go="1">Kembali</button>
+      <button class="btn btn-primary" data-go="3">Lanjut ke keputusan</button>
+    </div>
+  </section>
+
+  <!-- ============ LANGKAH 4 : KEPUTUSAN ============ -->
+  <section class="panel" data-panel="3" role="tabpanel" aria-label="Keputusan">
+    <div class="panel-head">
+      <div class="badge">4</div>
+      <div>
+        <h2>Pilih satu, lalu pertahankan pilihanmu</h2>
+        <p class="sub">Pilihan yang berbeda bisa sama-sama benar selama alasannya berangkat dari kondisi lahan dan hasil percobaanmu.</p>
+      </div>
+    </div>
+
+    <article class="card">
+      <h3>Strategi yang kelompokmu usulkan</h3>
+      <div class="choice">
+        <label>
+          <input type="radio" name="pilihan" value="Ambang batas (threshold)" data-track data-label="Strategi terpilih">
+          <span><span class="t">Ambang batas</span><br><span class="d">Sederhana, langsung membaca kondisi tanah.</span></span>
+        </label>
+        <label>
+          <input type="radio" name="pilihan" value="Jadwal waktu (timer)">
+          <span><span class="t">Jadwal waktu</span><br><span class="d">Paling murah dan mudah, tapi buta terhadap keadaan.</span></span>
+        </label>
+        <label>
+          <input type="radio" name="pilihan" value="Logika samar (fuzzy)">
+          <span><span class="t">Logika samar</span><br><span class="d">Paling hemat air, tapi butuh lebih banyak sensor dan pengaturan.</span></span>
+        </label>
+        <label>
+          <input type="radio" name="pilihan" value="Gabungan beberapa strategi">
+          <span><span class="t">Gabungan</span><br><span class="d">Misalnya jadwal waktu yang dibatalkan saat tanah masih basah.</span></span>
+        </label>
+      </div>
+
+      <div class="field">
+        <label for="alasan">Alasan pilihanmu <span class="sub">— sebutkan kondisi lahan, hasil simulasi, dan satu kelemahan yang kamu terima</span></label>
+        <textarea id="alasan" data-track data-label="Alasan pilihan" style="min-height:160px" placeholder="Tulis 4–6 kalimat."></textarea>
+        <div class="counter" data-for="alasan"></div>
+      </div>
+
+      <div class="field">
+        <label for="ukur">Bagaimana kelompokmu akan membuktikan bahwa alat ini berhasil setelah dipasang sebulan?</label>
+        <textarea id="ukur" data-track data-label="Cara mengukur keberhasilan" placeholder="Contoh: mencatat pemakaian air mingguan lewat meteran dan membandingkannya dengan bulan sebelumnya."></textarea>
+        <div class="counter" data-for="ukur"></div>
+      </div>
+
+      <details class="tip"><summary>Tanda alasan yang kuat</summary>
+        <p>Alasan yang kuat menyebut angka, bukan hanya sifat. "Fuzzy lebih hemat" masih lemah; "pada simulasi kelembapan 30% dan peluang hujan 90%, fuzzy menghemat 25 liter dibanding timer" jauh lebih kuat.</p>
+      </details>
+    </article>
+
+    <div class="desktop-nav">
+      <button class="btn btn-ghost" data-go="2">Kembali</button>
+      <button class="btn btn-primary" data-go="4">Lihat hasil kerja</button>
+    </div>
+  </section>
+
+  <!-- ============ LANGKAH 5 : HASIL ============ -->
+  <section class="panel" data-panel="4" role="tabpanel" aria-label="Hasil kerja">
+    <div class="panel-head">
+      <div class="badge">5</div>
+      <div>
+        <h2>Periksa sebelum dikumpulkan</h2>
+        <p class="sub">Semua jawabanmu dirangkum di sini. Bagian yang masih kosong ditandai supaya mudah kamu lengkapi.</p>
+      </div>
+    </div>
+
+    <article class="card summary" id="summary"></article>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btnPrint">Simpan sebagai PDF</button>
+      <button class="btn btn-ghost" id="btnFile">Unduh berkas jawaban</button>
+      <button class="btn btn-ghost" id="btnCopy">Salin semua jawaban</button>
+      <button class="btn btn-ghost" id="btnLoad">Buka berkas jawaban</button>
+      <button class="btn btn-ghost" id="btnReset">Kosongkan lembar</button>
+    </div>
+    <input type="file" id="fileInput" accept="application/json" hidden>
+
+    <p class="hint" style="margin-top:14px;font-size:.85rem;color:var(--ink-soft)">
+      Jawaban tersimpan selama halaman ini terbuka. Kalau lembar kerja mau dilanjutkan nanti, unduh berkas jawabannya dulu, lalu buka kembali lewat tombol di atas.
+    </p>
+  </section>
+
+  <div class="print-only" style="margin-top:26px;font-size:10pt;color:#444;border-top:1px solid #999;padding-top:10px">
+    Nilai: ______ &nbsp;&nbsp;·&nbsp;&nbsp; Paraf guru: ______________ &nbsp;&nbsp;·&nbsp;&nbsp; Tanggal: ______________
+  </div>
+</main>
+
+<div class="actionbar">
+  <button class="btn btn-ghost" id="prevBtn">Kembali</button>
+  <button class="btn btn-primary" id="nextBtn">Lanjut</button>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  var panels   = Array.prototype.slice.call(document.querySelectorAll(".panel"));
+  var stepBtns = Array.prototype.slice.call(document.querySelectorAll(".step-btn"));
+  var fields   = Array.prototype.slice.call(document.querySelectorAll("[data-track]"));
+  var current  = 0;
+
+  /* ---------- Toast ---------- */
+  var toastEl = document.getElementById("toast"), toastTimer;
+  function toast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ toastEl.classList.remove("show"); }, 2400);
+  }
+
+  /* ---------- Navigasi ---------- */
+  function show(i){
+    current = Math.max(0, Math.min(panels.length - 1, i));
+    panels.forEach(function(p, n){ p.classList.toggle("active", n === current); });
+    stepBtns.forEach(function(b, n){ b.setAttribute("aria-selected", n === current ? "true" : "false"); });
+    stepBtns[current].scrollIntoView({block:"nearest", inline:"center", behavior:"smooth"});
+    window.scrollTo({top:0, behavior:"smooth"});
+    document.getElementById("prevBtn").disabled = (current === 0);
+    document.getElementById("nextBtn").textContent = (current === panels.length - 1) ? "Simpan PDF" : "Lanjut";
+    if (current === panels.length - 1) renderSummary();
+  }
+
+  stepBtns.forEach(function(b){
+    b.addEventListener("click", function(){ show(+b.dataset.step); });
+  });
+  document.querySelectorAll("[data-go]").forEach(function(b){
+    b.addEventListener("click", function(){ show(+b.dataset.go); });
+  });
+  document.getElementById("prevBtn").addEventListener("click", function(){ show(current - 1); });
+  document.getElementById("nextBtn").addEventListener("click", function(){
+    if (current === panels.length - 1) window.print(); else show(current + 1);
+  });
+
+  /* ---------- Kemajuan pengisian ---------- */
+  var tankFill = document.getElementById("tankFill");
+  var tankText = document.getElementById("tankText");
+
+  function valueOf(f){
+    if (f.type === "radio"){
+      var picked = document.querySelector('input[name="' + f.name + '"]:checked');
+      return picked ? picked.value : "";
+    }
+    return f.value.trim();
+  }
+
+  function filledCount(){
+    return fields.filter(function(f){ return valueOf(f).length > 0; }).length;
+  }
+
+  function updateProgress(){
+    var done = filledCount(), total = fields.length;
+    var pct = Math.round(done / total * 100);
+    tankFill.style.width = pct + "%";
+    tankText.textContent = done + " dari " + total + " bagian terisi · " + pct + "%";
+
+    // tandai langkah yang isian utamanya sudah lengkap
+    stepBtns.forEach(function(b, n){
+      var panel = panels[n];
+      var inPanel = Array.prototype.slice.call(panel.querySelectorAll("[data-track]"));
+      if (!inPanel.length){ return; }
+      var allDone = inPanel.every(function(f){ return valueOf(f).length > 0; });
+      b.classList.toggle("done", allDone);
+    });
+  }
+
+  /* ---------- Penghitung kata ---------- */
+  document.querySelectorAll(".counter").forEach(function(c){
+    var target = document.getElementById(c.dataset.for);
+    if (!target) return;
+    function draw(){
+      var words = target.value.trim() ? target.value.trim().split(/\s+/).length : 0;
+      c.textContent = words + " kata";
+      c.classList.toggle("ok", words >= 12);
+    }
+    target.addEventListener("input", draw);
+    draw();
+  });
+
+  /* ---------- Textarea tumbuh otomatis ---------- */
+  function autoGrow(el){
+    if (el.tagName !== "TEXTAREA") return;
+    el.style.height = "auto";
+    el.style.height = Math.max(el.scrollHeight, 70) + "px";
+  }
+
+  fields.forEach(function(f){
+    f.addEventListener("input", function(){ autoGrow(f); updateProgress(); });
+    f.addEventListener("change", updateProgress);
+  });
+
+  /* ---------- Tombol penilaian cepat ---------- */
+  document.querySelectorAll("[data-chip-for]").forEach(function(group){
+    var target = document.getElementById(group.dataset.chipFor);
+    group.querySelectorAll(".chip").forEach(function(chip){
+      chip.setAttribute("aria-pressed", "false");
+      chip.addEventListener("click", function(){
+        var was = chip.getAttribute("aria-pressed") === "true";
+        group.querySelectorAll(".chip").forEach(function(c){ c.setAttribute("aria-pressed","false"); });
+        chip.setAttribute("aria-pressed", was ? "false" : "true");
+        var label = was ? "" : chip.textContent + " — ";
+        var rest = target.value.replace(/^.*?—\s*/, "");
+        target.value = was ? rest : label + rest;
+        autoGrow(target);
+        updateProgress();
+      });
+    });
+  });
+
+  /* ---------- Simulator ---------- */
+  var soil  = document.getElementById("soil");
+  var temp  = document.getElementById("temp");
+  var rain  = document.getElementById("rain");
+  var hours = document.getElementById("hours");
+  var LPM = 2.5;
+
+  function setVerdict(stEl, barEl, whyEl, on, minutes, why){
+    stEl.textContent = on ? "Menyiram " + minutes + " menit" : "Tidak menyiram";
+    stEl.className = "state " + (on ? "on" : "off");
+    barEl.style.width = Math.min(100, minutes / 15 * 100) + "%";
+    whyEl.textContent = why;
+  }
+
+  function runSim(){
+    var s = +soil.value, t = +temp.value, r = +rain.value, h = +hours.value;
+    document.getElementById("soilVal").textContent  = s;
+    document.getElementById("tempVal").textContent  = t;
+    document.getElementById("rainVal").textContent  = r;
+    document.getElementById("hoursVal").textContent = h;
+
+    // 1. Ambang batas: satu aturan, satu data
+    var thrOn = s < 40, thrMin = thrOn ? 10 : 0;
+    setVerdict(
+      document.getElementById("stThr"), document.getElementById("barThr"), document.getElementById("whyThr"),
+      thrOn, thrMin,
+      thrOn ? "Tanah " + s + "% berada di bawah ambang 40%, jadi pompa menyala selama 10 menit tetap."
+            : "Tanah " + s + "% masih di atas ambang 40%, jadi pompa diam. Cuaca tidak ikut dihitung."
+    );
+
+    // 2. Jadwal waktu: hanya melihat jam
+    var timOn = h >= 12, timMin = timOn ? 10 : 0;
+    setVerdict(
+      document.getElementById("stTim"), document.getElementById("barTim"), document.getElementById("whyTim"),
+      timOn, timMin,
+      timOn ? "Sudah " + h + " jam sejak penyiraman terakhir. Pompa menyala meski tanah lembap atau hujan akan turun."
+            : "Baru " + h + " jam sejak penyiraman terakhir, jadwal berikutnya pada jam ke-12."
+    );
+
+    // 3. Logika samar: menimbang beberapa data
+    var kering = Math.min(1, Math.max(0, (60 - s) / 45));
+    var panas  = Math.min(1, Math.max(0, (t - 26) / 14));
+    var hujan  = r / 100;
+    var jeda   = Math.min(1, h / 18);
+    var skor = 0.50 * kering + 0.18 * panas + 0.17 * jeda - 0.72 * hujan;
+    skor = Math.min(1, Math.max(0, skor));
+    var fuzMin = Math.round(skor * 15);
+    var fuzOn = fuzMin >= 2;
+    setVerdict(
+      document.getElementById("stFuz"), document.getElementById("barFuz"), document.getElementById("whyFuz"),
+      fuzOn, fuzMin,
+      fuzOn ? "Kekeringan " + Math.round(kering*100) + "%, panas " + Math.round(panas*100) + "%, peluang hujan " + r + "%. Lama penyiraman disesuaikan, tidak selalu 10 menit."
+            : (hujan > 0.5 ? "Peluang hujan " + r + "% menahan penyiraman meski tanah agak kering."
+                           : "Kebutuhan air terhitung kecil, penyiraman ditunda.")
+    );
+
+    var air = function(m){ return (m * LPM).toFixed(1); };
+    document.getElementById("simFoot").textContent =
+      "Pemakaian air sekali siram — ambang batas " + air(thrMin) + " L · jadwal waktu " + air(timMin) +
+      " L · logika samar " + air(fuzMin) + " L.";
+  }
+
+  [soil, temp, rain, hours].forEach(function(el){ el.addEventListener("input", runSim); });
+  runSim();
+
+  /* ---------- Ringkasan ---------- */
+  function collect(){
+    var seen = {}, out = [];
+    fields.forEach(function(f){
+      if (f.type === "radio"){
+        if (seen[f.name]) return;
+        seen[f.name] = true;
+        var picked = document.querySelector('input[name="' + f.name + '"]:checked');
+        out.push({ key:f.name, label:f.dataset.label, value: picked ? picked.value : "" });
+      } else {
+        out.push({ key:f.id, label:f.dataset.label, value:f.value.trim() });
+      }
+    });
+    return out;
+  }
+
+  function renderSummary(){
+    var box = document.getElementById("summary");
+    box.innerHTML = "";
+    collect().forEach(function(item){
+      var b = document.createElement("div");
+      b.className = "sum-block";
+      var q = document.createElement("p"); q.className = "sum-q"; q.textContent = item.label;
+      var a = document.createElement("p");
+      a.className = "sum-a" + (item.value ? "" : " empty");
+      a.textContent = item.value || "Belum diisi";
+      b.appendChild(q); b.appendChild(a); box.appendChild(b);
+    });
+    var done = filledCount();
+    var note = document.createElement("p");
+    note.className = "sum-block sum-q";
+    note.textContent = done === fields.length
+      ? "Semua bagian sudah terisi. Lembar kerja siap dikumpulkan."
+      : (fields.length - done) + " bagian masih kosong.";
+    box.appendChild(note);
+  }
+
+  function asText(){
+    var lines = ["LKPD Digital — Analisis Penyiraman IoT", ""];
+    collect().forEach(function(i){ lines.push(i.label + ":\n" + (i.value || "-") + "\n"); });
+    return lines.join("\n");
+  }
+
+  /* ---------- Tombol hasil kerja ---------- */
+  document.getElementById("btnPrint").addEventListener("click", function(){ window.print(); });
+
+  document.getElementById("btnCopy").addEventListener("click", function(){
+    var text = asText();
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(
+        function(){ toast("Jawaban disalin. Tinggal tempel di WhatsApp atau Google Classroom."); },
+        function(){ toast("Penyalinan gagal. Gunakan tombol unduh berkas jawaban."); }
+      );
+    } else {
+      toast("Peramban ini tidak mengizinkan penyalinan. Gunakan tombol unduh.");
+    }
+  });
+
+  document.getElementById("btnFile").addEventListener("click", function(){
+    var nama = document.getElementById("nama").value.trim() || "siswa";
+    var data = { judul:"LKPD Penyiraman IoT", waktu:new Date().toISOString(), jawaban:collect() };
+    var blob = new Blob([JSON.stringify(data, null, 2)], { type:"application/json" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "lkpd-" + nama.toLowerCase().replace(/\s+/g, "-") + ".json";
+    a.click();
+    URL.revokeObjectURL(a.href);
+    toast("Berkas jawaban terunduh.");
+  });
+
+  var fileInput = document.getElementById("fileInput");
+  document.getElementById("btnLoad").addEventListener("click", function(){ fileInput.click(); });
+  fileInput.addEventListener("change", function(){
+    var file = fileInput.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(){
+      try{
+        var data = JSON.parse(reader.result);
+        if (!data.jawaban) throw new Error("format");
+        data.jawaban.forEach(function(item){
+          var el = document.getElementById(item.key);
+          if (el){ el.value = item.value; autoGrow(el); return; }
+          var radio = document.querySelector('input[name="' + item.key + '"][value="' + item.value + '"]');
+          if (radio) radio.checked = true;
+        });
+        updateProgress(); renderSummary();
+        toast("Jawaban dimuat kembali.");
+      } catch(e){
+        toast("Berkas tidak terbaca. Pilih berkas .json hasil unduhan lembar ini.");
+      }
+      fileInput.value = "";
+    };
+    reader.readAsText(file);
+  });
+
+  document.getElementById("btnReset").addEventListener("click", function(){
+    if (!confirm("Kosongkan seluruh jawaban? Tindakan ini tidak bisa dibatalkan.")) return;
+    fields.forEach(function(f){ if (f.type === "radio") f.checked = false; else f.value = ""; });
+    document.querySelectorAll(".chip").forEach(function(c){ c.setAttribute("aria-pressed","false"); });
+    document.querySelectorAll("textarea").forEach(autoGrow);
+    document.querySelectorAll(".counter").forEach(function(c){ c.textContent = "0 kata"; c.classList.remove("ok"); });
+    updateProgress(); renderSummary(); show(0);
+    document.getElementById("nama").focus();
+    toast("Lembar dikosongkan.");
+  });
+
+  /* ---------- Peringatan sebelum menutup halaman ---------- */
+  window.addEventListener("beforeunload", function(e){
+    if (filledCount() > 0){ e.preventDefault(); e.returnValue = ""; }
+  });
+
+  updateProgress();
+  show(0);
+})();
+</script>
+</body>
+</html>
